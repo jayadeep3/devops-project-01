@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+    
+    tools{
+        maven '3.8.6'
+    }
+    environment{
+        dockercredentials=credentials('dockerhubid') 
+    }
+    stages {
+        stage('Build & Package') {
+            steps {
+                sh 'mvn clean'
+                sh 'mvn install -DskipTests'
+            }
+        }
+        stage('Build image') {
+            steps {
+                sh 'ls'
+                sh 'ls target'
+                sh 'docker build -t zencaisse:$BUILD_NUMBER . '
+            }
+        }
+
+        stage('Push image') {
+            steps {
+                sh 'echo $dockercredentials_PSW | docker login -u $dockercredentials_USR --password-stdin '
+                sh 'docker image tag zencaisse:$BUILD_NUMBER lugar2020/zencaisse:$BUILD_NUMBER'
+                sh 'docker image push lugar2020/zencaisse:$BUILD_NUMBER'
+            }
+        }
+    }
+}
